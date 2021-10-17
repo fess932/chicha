@@ -1,26 +1,39 @@
 package rfid
 
 import (
-	"bytes"
-	"chicha/Models"
-	"encoding/csv"
-	"encoding/xml"
+	"chicha/Packages/Config"
+	"chicha/Packages/rfid/models"
+	"chicha/Packages/rfid/uniqer"
 	"io"
 	"log"
 	"net"
+	"sync"
 	"time"
 )
 
 type Listener struct {
 	port string
-	s    net.Listener
 
 	ech chan Entry
+
+	Lap <-chan models.AverageLap
 }
+
+var once sync.Once
 
 func New(port string) *Listener {
 	workers := 10
-	return &Listener{port: port, ech: make(chan Entry, workers)}
+	loc, err := time.LoadLocation(Config.TIME_ZONE)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tz = loc
+	in := make(chan models.Lap)
+	l := &Listener{port: port, ech: make(chan Entry, workers), Lap: uniqer.Uniq(in)}
+	go l.server(in)
+
+	return l
 }
 
 type Entry struct { // todo lowercase
@@ -29,15 +42,13 @@ type Entry struct { // todo lowercase
 }
 
 func (l *Listener) Listen() {
-	go l.server()
-
+	go log.Println("start listen at", l.port)
 	s, err := net.Listen("tcp", l.port)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	defer s.Close()
-	l.s = s
 
 	for {
 		conn, err := s.Accept()
@@ -46,7 +57,7 @@ func (l *Listener) Listen() {
 			continue
 		}
 
-		t := time.Now() // debug timer run
+		//t := time.Now() // debug timer run
 
 		addr, ok := conn.RemoteAddr().(*net.TCPAddr)
 		if !ok {
@@ -61,18 +72,24 @@ func (l *Listener) Listen() {
 		}
 		conn.Close() // close conn after read
 
-		e := Entry{
+		// add to log
+		// logger.write(e)
+
+		// process data
+		go l.serve(Entry{
 			Addr: addr.IP.String(),
 			Body: b,
-		}
+		})
 
-		l.ech <- e
-
-		log.Println("time for one event:", time.Since(t)) // debug timer end
+		//log.Println("time for one event:", time.Since(t)) // debug timer end
 	}
 }
 
-func (l *Listener) server() {
+func (l *Listener) serve(e Entry) {
+	l.ech <- e
+}
+
+func (l *Listener) server(in chan models.Lap) {
 	for {
 		select { // graceful shutdown
 		case e := <-l.ech:
@@ -82,40 +99,10 @@ func (l *Listener) server() {
 			}
 
 			lap.AntennaIP = e.Addr
-			// write to db, processing dublications, send to chan
-			log.Println(lap)
 
+			// send to uniqer
+			// write to db, processing dublications, send to chan
+			in <- lap
 		}
 	}
-}
-
-func decode(data []byte) (Models.Lap, error) {
-	if Models.IsValidXML(data) {
-		return decodeXML(data)
-	}
-
-	return decodeCSV(data)
-}
-
-func decodeXML(data []byte) (lap Models.Lap, err error) {
-	err = xml.Unmarshal(data, &lap)
-	return
-}
-
-func decodeCSV(data []byte) (Models.Lap, error) {
-	r := csv.NewReader(bytes.NewReader(data))
-	r.Comma = ','
-	r.FieldsPerRecord = 3
-	CSV, err := r.Read()
-	if err != nil {
-		return Models.Lap{}, err
-	}
-
-	log.Println("csv::", CSV)
-
-	return Models.Lap{}, nil
-}
-
-func decodeTime(str string) {
-
 }
