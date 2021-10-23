@@ -36,7 +36,7 @@ type Lap struct {
 
 	Antenna               uint8     `gorm:"index" json:"antenna" xml:"Antenna"`
 	AntennaIP             string    `gorm:"char(128);index" json:"antenna_ip"`
-	CreatedAt             time.Time `json:"created_at"`
+	UpdatedAt             time.Time `json:"updated_at"`
 	RaceID                uint      `gorm:"index" json:"race_id"`
 	CurrentRacePosition   uint      `gorm:"index" json:"current_race_postition"`
 	TimeBehindTheLeader   int64     `gorm:"index" json:"time_behind_the_leader"`
@@ -47,6 +47,7 @@ type Lap struct {
 	LapIsStrange          int       `gorm:"index" json:"lap_is_strange"`
 	StageFinished         int       `gorm:"index" json:"stage_finished"`
 	BestLapTime           int64     `gorm:"index" json:"best_lap_time"`
+	BestLapNumber   	    uint      `gorm:"index" json:"best_lap_number"`
 	BestLapPosition       uint      `gorm:"index" json:"best_lap_postition"`
 	RaceTotalTime         int64     `gorm:"index" json:"race_total_time"`
 	BetterOrWorseLapTime  int64     `gorm:"index" json:"better_or_worse_lap_time"`
