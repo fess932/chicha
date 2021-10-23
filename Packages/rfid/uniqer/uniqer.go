@@ -39,20 +39,16 @@ func newRacer(out chan<- models.AverageLap) chan<- models.Lap {
 	return in
 }
 
-// todo:
-// remove duplicates:
-// first time, average time
-// filter by tagID, antenna№, time 1s
 func run(in <-chan models.Lap, filtered chan<- models.AverageLap) {
 	var laps []models.Lap
-	var timer <-chan time.Time // mb jitter lower or bigger second
+	var timer <-chan time.Time
 
 	for {
 		select {
 
 		case l := <-in:
 			if len(laps) == 0 {
-				timer = time.After(time.Second) // init timer
+				timer = time.After(time.Second) // mb jitter lower or bigger second
 			}
 			laps = append(laps, l)
 

@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"net"
-	"sync"
 	"time"
 )
 
@@ -18,8 +17,6 @@ type Listener struct {
 
 	Lap <-chan models.AverageLap
 }
-
-var once sync.Once
 
 func New(port string) *Listener {
 	workers := 10
