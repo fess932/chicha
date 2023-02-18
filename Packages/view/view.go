@@ -51,7 +51,7 @@ func (v *View) getFileSystem() http.FileSystem {
 		log.Fatal(err)
 	}
 	return http.FS(fsys)
-}
+} //
 
 func New(r *gin.Engine, static embed.FS, ch <-chan race.ID) *View {
 	v := &View{static: static}
