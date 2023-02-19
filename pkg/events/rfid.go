@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	badger "github.com/dgraph-io/badger/v3"
+	"github.com/dgraph-io/badger/v3"
 	"github.com/rs/zerolog/log"
 	"github.com/segmentio/ksuid"
 	"github.com/vmihailenco/msgpack/v5"
@@ -25,7 +25,7 @@ type RfidReader struct {
 }
 
 func NewRfidReader(addr string) (*RfidReader, error) {
-	opts := badger.DefaultOptions("./binaries/badgerdb")
+	opts := badger.DefaultOptions("./binaries/badgerdb").WithLoggingLevel(badger.ERROR)
 	db, err := badger.Open(opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open db: %w", err)
@@ -39,19 +39,24 @@ func NewRfidReader(addr string) (*RfidReader, error) {
 
 // Serve слушает события по tcp
 func (r *RfidReader) Serve() {
-	if err := r.writeEvent(domain.Event{
-		ID:         ksuid.New().String(),
-		Date:       time.Now(),
-		IncomeDate: time.Now().Add(time.Second),
-	}); err != nil {
-		log.Err(err).Msg("failed to serve")
+	for i := 0; i < 1000; i++ {
+		if err := r.writeEvent(domain.Event{
+			ID:         ksuid.New().String(),
+			Date:       time.Now(),
+			IncomeDate: time.Now().Add(time.Second),
+		}); err != nil {
+			log.Err(err).Msg("failed to serve")
+		}
 	}
 }
 
 func (r *RfidReader) Stop() {
 	log.Printf("stop rfid reader, close db")
+	log.Err(r.db.Flatten(4)).Msg("flatten on stop")
+	log.Err(r.db.RunValueLogGC(0.5)).Msg("run value log gc")
+
 	if err := r.db.Close(); err != nil {
-		log.Err(err).Msg("failed to stop rfid reader")
+		log.Err(err).Msg("failed to stop badger db")
 	}
 }
 

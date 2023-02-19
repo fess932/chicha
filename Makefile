@@ -16,6 +16,6 @@ test:
 	CGO_ENABLED=0 go build -o ./binaries/racetest ./Scripts/racetest.go
 	./binaries/racetest --collector $(APP_ANTENNA_LISTENER_IP) --web $(API_SERVER_LISTENER_IP)
 
-cmdstart:
+chicha:
 	CGO_ENABLED=0 go build -o ./binaries/chicha ./cmd/chicha
 	./binaries/chicha --collector $(APP_ANTENNA_LISTENER_IP) --web $(API_SERVER_LISTENER_IP)
