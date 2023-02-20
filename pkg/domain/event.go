@@ -4,6 +4,8 @@ import (
 	"time"
 )
 
+const EventEntity = "EVENT"
+
 // Event входящее событие из источника данных, rfid ридера например
 type Event struct {
 	ID         string

@@ -7,6 +7,8 @@ require (
 	github.com/gin-contrib/multitemplate v0.0.0-20211002122701-e9e3201b87a0
 	github.com/gin-gonic/gin v1.8.2
 	github.com/glebarez/sqlite v1.7.0
+	github.com/go-chi/chi/v5 v5.0.8
+	github.com/go-pkgz/rest v1.17.0
 	github.com/rs/zerolog v1.29.0
 	github.com/segmentio/ksuid v1.0.4
 	github.com/vmihailenco/msgpack/v5 v5.3.5

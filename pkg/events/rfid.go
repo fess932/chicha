@@ -1,15 +1,16 @@
 package events
 
 import (
-	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/dgraph-io/badger/v3"
+	"github.com/go-pkgz/rest"
 	"github.com/rs/zerolog/log"
 	"github.com/segmentio/ksuid"
-	"github.com/vmihailenco/msgpack/v5"
 
 	"chicha/pkg/domain"
+	"chicha/pkg/storage"
 )
 
 // низкоуровневый пакет для чтения всех входящих событий и хранения по ключам
@@ -20,27 +21,21 @@ import (
 // 4 по событиям нужно уметь построить состояние
 
 type RfidReader struct {
-	addr string
-	db   *badger.DB
+	addr    string
+	storage *storage.BadgerStorage
 }
 
-func NewRfidReader(addr string) (*RfidReader, error) {
-	opts := badger.DefaultOptions("./binaries/badgerdb").WithLoggingLevel(badger.ERROR)
-	db, err := badger.Open(opts)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open db: %w", err)
-	}
-
+func NewRfidReader(addr string, db *badger.DB) (*RfidReader, error) {
 	return &RfidReader{
-		addr: addr,
-		db:   db,
+		addr:    addr,
+		storage: storage.NewStorage(domain.EventEntity, db),
 	}, nil
 }
 
 // Serve слушает события по tcp
-func (r *RfidReader) Serve() {
+func (rfid *RfidReader) Serve() {
 	for i := 0; i < 1000; i++ {
-		if err := r.writeEvent(domain.Event{
+		if err := rfid.writeEvent(domain.Event{
 			ID:         ksuid.New().String(),
 			Date:       time.Now(),
 			IncomeDate: time.Now().Add(time.Second),
@@ -50,27 +45,19 @@ func (r *RfidReader) Serve() {
 	}
 }
 
-func (r *RfidReader) Stop() {
-	log.Printf("stop rfid reader, close db")
-	log.Err(r.db.Flatten(4)).Msg("flatten on stop")
-	log.Err(r.db.RunValueLogGC(0.5)).Msg("run value log gc")
-
-	if err := r.db.Close(); err != nil {
-		log.Err(err).Msg("failed to stop badger db")
-	}
+func (rfid *RfidReader) writeEvent(event domain.Event) error {
+	return rfid.storage.Create(event.ID, event)
 }
 
-func (r *RfidReader) writeEvent(event domain.Event) error {
-	buf, err := msgpack.Marshal(event)
+func (rfid *RfidReader) Stop() {
+	log.Printf("stop rfid reader, close db")
+}
+
+func (rfid *RfidReader) ListEventsHttp(w http.ResponseWriter, r *http.Request) {
+	events, err := rfid.storage.ListEvent(nil)
 	if err != nil {
-		return fmt.Errorf("failed to marshal event:%w", err)
+		return
 	}
 
-	return r.db.Update(func(txn *badger.Txn) error {
-		err = txn.Set([]byte(event.ID), buf)
-		if err != nil {
-			return err
-		}
-		return nil
-	})
+	rest.RenderJSON(w, events)
 }

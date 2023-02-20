@@ -41,6 +41,15 @@ github.com/glebarez/go-sqlite
 # github.com/glebarez/sqlite v1.7.0
 ## explicit; go 1.18
 github.com/glebarez/sqlite
+# github.com/go-chi/chi/v5 v5.0.8
+## explicit; go 1.14
+github.com/go-chi/chi/v5
+github.com/go-chi/chi/v5/middleware
+# github.com/go-pkgz/rest v1.17.0
+## explicit; go 1.17
+github.com/go-pkgz/rest
+github.com/go-pkgz/rest/logger
+github.com/go-pkgz/rest/realip
 # github.com/go-playground/locales v0.14.1
 ## explicit; go 1.17
 github.com/go-playground/locales
