@@ -1,6 +1,6 @@
 module chicha
 
-go 1.17
+go 1.20
 
 require (
 	github.com/dgraph-io/badger/v3 v3.2103.5
