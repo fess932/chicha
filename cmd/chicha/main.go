@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/rs/zerolog/log"
 
+	"chicha/Packages/Config"
 	"chicha/pkg/events"
 )
 
@@ -19,7 +20,7 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to open db")
 	}
 
-	evt, err := events.NewRfidReader("localhost:4000", db)
+	rfidReader, err := events.NewRfidReader(Config.APP_ANTENNA_LISTENER_IP, db)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create rfid reader at localhost:4000")
 	}
@@ -30,11 +31,11 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	r.Get("/", evt.ListEventsHttp)
+	r.Get("/", rfidReader.ListEventsHttp)
 
 	// gracefull shutdown
 	defer func() {
-		evt.Stop() // gracefull shutdown, event listener
+		rfidReader.Stop() // gracefull shutdown, event listener
 
 		// database compact and stop
 		log.Err(db.Flatten(4)).Msg("flatten on stop")
@@ -46,8 +47,9 @@ func main() {
 		log.Info().Msg("chicha stopped")
 	}()
 
-	go evt.Serve()
+	go rfidReader.Serve() // старт рфид ридера
 
+	// старт http сервера для клиентов
 	if err = http.ListenAndServe("localhost:8080", r); err != nil {
 		log.Err(err).Msg("failed to close")
 		return
